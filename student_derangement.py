@@ -5,12 +5,14 @@
 import math
 import pprint
 
-N = 52  # number of students
-S = 4   # group size
-A = 8   # number of activities
+ORDINAL_SUFFIXES = ["th", "st", "nd", "rd"] + ["th"]*16
+
+def ordinal(n):
+    return "%d%s" % (n, ORDINAL_SUFFIXES[n%20])
 
 class PartitionSet(object):
     def __init__(self, N, S):
+        """Sets up a partition set for N students divided into groups of S"""
         self.N = N
         self.S = S
         self.G = int(math.ceil(N/S))
@@ -36,7 +38,7 @@ class PartitionSet(object):
 
     def get_missing(self):
         for p, partition in enumerate(self.partitions):
-            missing = set(range(N)).difference(set().union(*partition))
+            missing = set(range(self.N)).difference(set().union(*partition))
             if missing:
                 yield p, missing
 
@@ -46,9 +48,13 @@ class PartitionSet(object):
             if set(l) != {self.S}:
                 yield p, l
 
+    def show_partition(self, partition):
+        print(" ".join(",".join("%2d" % n for n in sorted(pp)) for pp in sorted(partition, key=min)))
+
     def show_and_test(self):
         for partition in self.partitions:
-            print(" ".join(",".join("%2d" % n for n in sorted(pp)) for pp in sorted(partition, key=min)))
+            self.show_partition(partition)
+
         duplicates = self.get_duplicates()
         missing = dict(self.get_missing())
         badly_sized = dict(self.get_badly_sized())
@@ -62,6 +68,36 @@ class PartitionSet(object):
             print ("Badly Sized:")
             pprint.pprint(badly_sized)
 
+class PartitionMaker(PartitionSet):
+    def __init__(self, N, S):
+        super(PartitionMaker, self).__init__(N, S)
+        self.worked_with = {}
+
+    def add_partition(self, partition):
+        super(PartitionMaker, self).add_partition(partition)
+        for group in partition:
+            for n in group:
+                self.worked_with.setdefault(n, set()).update(group.difference({n}))
+
+    def add_initial_partition(self):
+        self.add_partition([{n for n in range(self.N) if n/self.S == g} for g in range(self.G)])
+
+    def find_next_partition(self):
+        """simple partition generation that just slots the first things it can find in place"""
+        partition = [set() for g in range(self.G)]
+        for n in range(self.N):
+            avoid = self.worked_with.get(n, set())
+            for group in partition:
+                if len(group) < self.S and not group.intersection(avoid):
+                    group.add(n)
+                    partition.sort(key=len)
+                    break
+            else:
+                self.show_and_test()
+                self.show_partition(partition)
+                raise ValueError("No place for %d in %s partition" % (n, ordinal(len(self.partitions)+1)))
+        self.add_partition(partition)
+
 def simple_spread(N, S):
     G = int(math.ceil(N/S)) # number of groups
     for a in [1, 5, 7, 11, 17, 29]:
@@ -70,8 +106,12 @@ def simple_spread(N, S):
         yield partition
 
 if __name__ == '__main__':
-    P = PartitionSet(N, S)
-    for partition in simple_spread(N, S):
+    A = 8   # number of activities
+    P = PartitionMaker(52, 4)
+    for partition in simple_spread(52, 4):
         P.add_partition(partition)
+    for a in range(A-len(P.partitions)):
+        P.find_next_partition()
+    # P = PartitionSet(52, 4)
     P.show_and_test()
 
