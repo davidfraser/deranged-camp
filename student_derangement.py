@@ -4,6 +4,7 @@
 
 import math
 import pprint
+import random
 
 ORDINAL_SUFFIXES = ["th", "st", "nd", "rd"] + ["th"]*16
 
@@ -67,6 +68,8 @@ class PartitionSet(object):
         if badly_sized:
             print ("Badly Sized:")
             pprint.pprint(badly_sized)
+        if not (duplicates or missing or badly_sized):
+            print ("Valid solution")
 
 class PartitionMaker(PartitionSet):
     def __init__(self, N, S):
@@ -82,10 +85,11 @@ class PartitionMaker(PartitionSet):
     def add_initial_partition(self):
         self.add_partition([{n for n in range(self.N) if n/self.S == g} for g in range(self.G)])
 
-    def find_next_partition(self):
-        """simple partition generation that just slots the first things it can find in place"""
+    def find_next_partition(self, n_sequence=None):
+        """simple partition generation that just slots the given numbers into the first place it can find for them"""
         partition = [set() for g in range(self.G)]
-        for n in range(self.N):
+        n_sequence = n_sequence or range(self.N)
+        for n in n_sequence:
             avoid = self.worked_with.get(n, set())
             for group in partition:
                 if len(group) < self.S and not group.intersection(avoid):
@@ -93,10 +97,21 @@ class PartitionMaker(PartitionSet):
                     partition.sort(key=len)
                     break
             else:
-                self.show_and_test()
-                self.show_partition(partition)
+                # self.show_and_test()
+                # self.show_partition(partition)
                 raise ValueError("No place for %d in %s partition" % (n, ordinal(len(self.partitions)+1)))
         self.add_partition(partition)
+
+    def try_random_order(self):
+        for i in range(100):
+            n_sequence = range(self.N)
+            random.shuffle(n_sequence)
+            try:
+                self.find_next_partition(n_sequence)
+                print "!"
+                return
+            except ValueError, e:
+                print "x",
 
 def simple_spread(N, S):
     G = int(math.ceil(N/S)) # number of groups
@@ -108,10 +123,10 @@ def simple_spread(N, S):
 if __name__ == '__main__':
     A = 8   # number of activities
     P = PartitionMaker(52, 4)
-    for partition in simple_spread(52, 4):
-        P.add_partition(partition)
-    for a in range(A-len(P.partitions)):
-        P.find_next_partition()
+    # for partition in simple_spread(52, 4):
+    #     P.add_partition(partition)
+    for a in range(A-len(P.partitions)+1):
+        P.try_random_order()
     # P = PartitionSet(52, 4)
     P.show_and_test()
 
