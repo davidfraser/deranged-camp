@@ -25,6 +25,9 @@ ORDINAL_SUFFIXES = ["th", "st", "nd", "rd"] + ["th"]*16
 def ordinal(n):
     return "%d%s" % (n, ORDINAL_SUFFIXES[n%20])
 
+# TODO: Add gender requirements
+# TODO: add assessors
+
 class PartitionSet(object):
     def __init__(self, N, S):
         """Sets up a partition set for N students divided into groups of S"""
