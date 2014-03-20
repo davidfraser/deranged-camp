@@ -191,7 +191,7 @@ def simple_spread(N, S):
 
 if __name__ == '__main__':
 
-    with open('scholar camp list.csv') as f:
+    with open('students.csv') as f:
         students = list(sorted(csv.DictReader(f), key=lambda s:(s['Gender'],s['Race'])))
 
     with open('leaders.csv') as f:
