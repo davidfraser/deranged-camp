@@ -29,12 +29,14 @@ def ordinal(n):
 rand_instance  = random.Random(x=1)
 
 class PartitionSet(object):
-    def __init__(self, N, S):
+    def __init__(self, N, S, students, leaders):
         """Sets up a partition set for N students divided into groups of S"""
         self.N = N
         self.S = S
         self.G = int(math.ceil(N/S))
         self.partitions = []
+        self.students = students
+        self.leaders = leaders
 
     def add_partition(self, partition):
         self.partitions.append(partition)
@@ -66,6 +68,16 @@ class PartitionSet(object):
             if set(l) != {self.S}:
                 yield p, l
 
+    def get_leaders_with_duplicate_students(self):
+        leaders_kids = {}
+        for p, partition in enumerate(self.partitions):
+            for i, group in enumerate(partition):
+                kidset = leaders_kids.setdefault(i, set())
+                for n in group:
+                    if n in kidset:
+                        yield self.leaders[i], self.students[n]
+
+
     def show_partition(self, partition):
         print("\n".join('%(First Name)s %(Surname)s: ' % self.leaders[i] + ", ".join('%(First Name)s %(Surname)s (%(Gender)s)' % self.students[n] for n in pp) for i, pp in enumerate(partition)))
 
@@ -82,6 +94,7 @@ class PartitionSet(object):
         duplicates = self.get_duplicates()
         missing = dict(self.get_missing())
         badly_sized = dict(self.get_badly_sized())
+        leaders_with_duplicates = list(self.get_leaders_with_duplicate_students())
         if duplicates:
             print ("Duplicates:")
             pprint.pprint(duplicates)
@@ -91,18 +104,20 @@ class PartitionSet(object):
         if badly_sized:
             print ("Badly Sized:")
             pprint.pprint(badly_sized)
-        if not (duplicates or missing or badly_sized):
+        if leaders_with_duplicates:
+            print ("Leaders with duplicates:")
+            pprint.pprint(leaders_with_duplicates)
+        if not (duplicates or missing or badly_sized or leaders_with_duplicates):
             print ("Valid solution")
             return True
         return False
 
 class PartitionMaker(PartitionSet):
     def __init__(self, N, S, students, leaders):
-        super(PartitionMaker, self).__init__(N, S)
+        super(PartitionMaker, self).__init__(N, S, students, leaders)
         self.worked_with = {}
         self.worked_with_leaders = {}
-        self.students = students
-        self.leaders = leaders
+
 
     def add_partition(self, partition):
         super(PartitionMaker, self).add_partition(partition)
