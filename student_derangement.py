@@ -183,7 +183,12 @@ class PartitionMaker(PartitionSet):
                 raise ValueError("No place for %d in %s partition" % (n, ordinal(len(self.partitions)+1)))
         self.add_partition(partition)
 
-    def try_random_order(self, max_tries=5000):
+    def try_random_order(self, max_tries=None):
+        l = len(self.partitions)
+        sys.stdout.write("Searching for partition %d: " % (l+1))
+        if max_tries is None:
+            # heuristic to look longer when we need to
+            max_tries = self.N * (self.S + self.G) + ((self.S+self.G)/2) ** ((3 * (l+1))//4)
         for i in range(max_tries):
             n_sequence = range(self.N)
             rand_instance.shuffle(n_sequence)
@@ -215,18 +220,19 @@ if __name__ == '__main__':
 
     if len(students) % len(leaders) != 0:
         raise ValueError("Students must be an exact multiple of the number of leaders")
-    A = 6   # number of activities
+    A = 8   # number of activities
     P = PartitionMaker(len(students), len(students)/len(leaders), students, leaders)
-    repeated_failures = 0
+    repeated_failures = {}
     while len(P.partitions) < A:
         try:
             P.try_random_order()
-            repeated_failures = 0
+            repeated_failures[len(P.partitions)] = 0
         except ValueError:
-            repeated_failures += 1
-            items_to_pop = 1 + (repeated_failures // 5)
+            repeated_failures[len(P.partitions)] += 1
+            items_to_pop = 1 + (repeated_failures[len(P.partitions)] // 5)
             print ("Going back %d..." % items_to_pop)
             for i in range(items_to_pop):
+                repeated_failures[len(P.partitions)] = 0
                 P.pop_partition()
     print
     P.show_and_test()
