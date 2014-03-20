@@ -220,7 +220,7 @@ if __name__ == '__main__':
 
     if len(students) % len(leaders) != 0:
         raise ValueError("Students must be an exact multiple of the number of leaders")
-    A = 8   # number of activities
+    A = 6   # number of activities
     P = PartitionMaker(len(students), len(students)/len(leaders), students, leaders)
     repeated_failures = {}
     while len(P.partitions) < A:
