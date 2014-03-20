@@ -26,7 +26,7 @@ ORDINAL_SUFFIXES = ["th", "st", "nd", "rd"] + ["th"]*16
 def ordinal(n):
     return "%d%s" % (n, ORDINAL_SUFFIXES[n%20])
 
-rand_instance  = random.Random(x=1)
+rand_instance  = random.Random()
 
 class PartitionSet(object):
     def __init__(self, N, S, students, leaders):
