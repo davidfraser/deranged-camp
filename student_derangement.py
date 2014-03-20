@@ -78,9 +78,18 @@ class PartitionSet(object):
                         yield self.leaders[i], self.students[n]
                     kidset.add(n)
 
+    def get_groups_with_only_one_gender(self):
+        for p, partition in enumerate(self.partitions):
+            for i, group in enumerate(partition):
+                genders = set([self.students[gn]['Gender'] for gn in group])
+                if len(genders) < 2:
+                    yield self.group_to_string(i, group)
+
+    def group_to_string(self, leader_num, group):
+        return '%(First Name)s %(Surname)s: ' % self.leaders[leader_num] + ", ".join('%(First Name)s %(Surname)s (%(Gender)s)' % self.students[n] for n in group)
 
     def show_partition(self, partition):
-        print("\n".join('%(First Name)s %(Surname)s: ' % self.leaders[i] + ", ".join('%(First Name)s %(Surname)s (%(Gender)s)' % self.students[n] for n in pp) for i, pp in enumerate(partition)))
+        print("\n".join(self.group_to_string(i, pp) for i, pp in enumerate(partition)))
 
     def save_de_rangement(self):
         for partition in self.partitions:
@@ -96,6 +105,7 @@ class PartitionSet(object):
         missing = dict(self.get_missing())
         badly_sized = dict(self.get_badly_sized())
         leaders_with_duplicates = list(self.get_leaders_with_duplicate_students())
+        groups_with_one_gender = list(self.get_groups_with_only_one_gender())
         if duplicates:
             print ("Duplicates:")
             pprint.pprint(duplicates)
@@ -108,6 +118,9 @@ class PartitionSet(object):
         if leaders_with_duplicates:
             print ("Leaders with duplicates:")
             pprint.pprint(leaders_with_duplicates)
+        if groups_with_one_gender:
+            print ("Groups with one gender:")
+            pprint.pprint(groups_with_one_gender)
         if not (duplicates or missing or badly_sized or leaders_with_duplicates):
             print ("Valid solution")
             return True
