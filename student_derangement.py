@@ -76,6 +76,7 @@ class PartitionSet(object):
                 for n in group:
                     if n in kidset:
                         yield self.leaders[i], self.students[n]
+                    kidset.add(n)
 
 
     def show_partition(self, partition):
