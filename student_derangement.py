@@ -19,11 +19,14 @@
 import math
 import pprint
 import random
+import csv
 
 ORDINAL_SUFFIXES = ["th", "st", "nd", "rd"] + ["th"]*16
 
 def ordinal(n):
     return "%d%s" % (n, ORDINAL_SUFFIXES[n%20])
+
+rand_instance  = random.Random(x=1)
 
 # TODO: Add gender requirements
 # TODO: add assessors
@@ -67,10 +70,16 @@ class PartitionSet(object):
                 yield p, l
 
     def show_partition(self, partition):
-        print(" ".join(",".join("%2d" % n for n in sorted(pp)) for pp in sorted(partition, key=min)))
+        print("\n".join('%(First Name)s %(Surname)s: ' % self.leaders[i] + ", ".join('%(First Name)s %(Surname)s' % self.students[n] for n in pp) for i, pp in enumerate(partition)))
+
+    def save_de_rangement(self):
+        for partition in self.partitions:
+            self.show_partition(partition)
 
     def show_and_test(self):
-        for partition in self.partitions:
+
+        for i, partition in enumerate(self.partitions):
+            print '\nExercise %02d\n' % (i+1)
             self.show_partition(partition)
 
         duplicates = self.get_duplicates()
@@ -87,17 +96,24 @@ class PartitionSet(object):
             pprint.pprint(badly_sized)
         if not (duplicates or missing or badly_sized):
             print ("Valid solution")
+            return True
+        return False
 
 class PartitionMaker(PartitionSet):
-    def __init__(self, N, S):
+    def __init__(self, N, S, students, leaders):
         super(PartitionMaker, self).__init__(N, S)
         self.worked_with = {}
+        self.worked_with_leaders = {}
+        self.students = students
+        self.leaders = leaders
 
     def add_partition(self, partition):
         super(PartitionMaker, self).add_partition(partition)
-        for group in partition:
+        for i, group in enumerate(partition):
             for n in group:
                 self.worked_with.setdefault(n, set()).update(group.difference({n}))
+                a = self.worked_with_leaders.setdefault(n, set())
+                a.add(i)
 
     def add_initial_partition(self):
         self.add_partition([{n for n in range(self.N) if n/self.S == g} for g in range(self.G)])
@@ -108,10 +124,11 @@ class PartitionMaker(PartitionSet):
         n_sequence = n_sequence or range(self.N)
         for n in n_sequence:
             avoid = self.worked_with.get(n, set())
-            for group in partition:
-                if len(group) < self.S and not group.intersection(avoid):
+            avoid_leader = self.worked_with_leaders.get(n, set())
+            for i, group in enumerate(sorted(partition, key=len)):
+                group = partition[i]
+                if len(group) < self.S and not group.intersection(avoid) and not i in avoid_leader:
                     group.add(n)
-                    partition.sort(key=len)
                     break
             else:
                 # self.show_and_test()
@@ -122,7 +139,7 @@ class PartitionMaker(PartitionSet):
     def try_random_order(self):
         for i in range(100):
             n_sequence = range(self.N)
-            random.shuffle(n_sequence)
+            rand_instance.shuffle(n_sequence)
             try:
                 self.find_next_partition(n_sequence)
                 print "!"
@@ -138,12 +155,21 @@ def simple_spread(N, S):
         yield partition
 
 if __name__ == '__main__':
+
+    with open('scholar camp list.csv') as f:
+        students = list(csv.DictReader(f))
+
+    with open('leaders.csv') as f:
+        leaders = list(csv.DictReader(f))
+
     A = 8   # number of activities
-    P = PartitionMaker(52, 4)
+    P = PartitionMaker(52, 4, students, leaders)
     # for partition in simple_spread(52, 4):
     #     P.add_partition(partition)
     for a in range(A-len(P.partitions)+1):
         P.try_random_order()
+    print
     # P = PartitionSet(52, 4)
     P.show_and_test()
+
 
