@@ -171,16 +171,19 @@ class PartitionMaker(PartitionSet):
                 raise ValueError("No place for %d in %s partition" % (n, ordinal(len(self.partitions)+1)))
         self.add_partition(partition)
 
-    def try_random_order(self):
-        for i in range(100):
+    def try_random_order(self, max_tries=10000):
+        for i in range(max_tries):
             n_sequence = range(self.N)
             rand_instance.shuffle(n_sequence)
             try:
                 self.find_next_partition(n_sequence)
-                print "!"
-                return
+                print "! (%d tries)" % i
+                return True
             except ValueError, e:
-                print "x",
+                if i % 100 == 0:
+                    print ".",
+        else:
+            raise ValueError("Could not find solution to add to %d items" % len(self.partitions))
 
 def simple_spread(N, S):
     G = int(math.ceil(N/S)) # number of groups
@@ -197,14 +200,13 @@ if __name__ == '__main__':
     with open('leaders.csv') as f:
         leaders = list(csv.DictReader(f))
 
-    A = 8   # number of activities
-    P = PartitionMaker(52, 4, students, leaders)
-    # for partition in simple_spread(52, 4):
-    #     P.add_partition(partition)
+    if len(students) % len(leaders) != 0:
+        raise ValueError("Students must be an exact multiple of the number of leaders")
+    A = 6   # number of activities
+    P = PartitionMaker(len(students), len(students)/len(leaders), students, leaders)
     for a in range(A-len(P.partitions)+1):
         P.try_random_order()
     print
-    # P = PartitionSet(52, 4)
     P.show_and_test()
     P.save_de_rangement()
 
