@@ -88,12 +88,20 @@ class PartitionSet(object):
     def group_to_string(self, leader_num, group):
         return '%(First Name)s %(Surname)s: ' % self.leaders[leader_num] + ", ".join('%(First Name)s %(Surname)s (%(Gender)s)' % self.students[n] for n in group)
 
+    def group_to_row(self, leader_num, group):
+        return ['%(First Name)s %(Surname)s' % self.leaders[leader_num]] + ['%(First Name)s %(Surname)s' % self.students[n] for n in group]
+
     def show_partition(self, partition):
         print("\n".join(self.group_to_string(i, pp) for i, pp in enumerate(partition)))
 
     def save_de_rangement(self):
-        for partition in self.partitions:
-            self.show_partition(partition)
+        with open('derangement.csv', 'wb') as f:
+            csv_file = csv.writer(f)
+            for p, partition in enumerate(self.partitions):
+                csv_file.writerow(['Exercise %02d'%(p+1)] + ['']*self.S)
+                for i, group in enumerate(partition):
+                    csv_file.writerow(self.group_to_row(i, group))
+                csv_file.writerow(['']*(self.S+1))
 
     def show_and_test(self):
 
@@ -198,5 +206,6 @@ if __name__ == '__main__':
     print
     # P = PartitionSet(52, 4)
     P.show_and_test()
+    P.save_de_rangement()
 
 
