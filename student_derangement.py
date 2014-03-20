@@ -20,6 +20,7 @@ import math
 import pprint
 import random
 import csv
+import sys
 
 ORDINAL_SUFFIXES = ["th", "st", "nd", "rd"] + ["th"]*16
 
@@ -149,6 +150,17 @@ class PartitionMaker(PartitionSet):
                 a = self.worked_with_leaders.setdefault(n, set())
                 a.add(i)
 
+    def clear(self):
+        self.partitions = []
+        self.worked_with = {}
+        self.worked_with_leaders = {}
+
+    def pop_partition(self):
+        new_partitions = self.partitions[:-1]
+        self.clear()
+        for partition in new_partitions:
+            self.add_partition(partition)
+
     def add_initial_partition(self):
         self.add_partition([{n for n in range(self.N) if n/self.S == g} for g in range(self.G)])
 
@@ -171,7 +183,7 @@ class PartitionMaker(PartitionSet):
                 raise ValueError("No place for %d in %s partition" % (n, ordinal(len(self.partitions)+1)))
         self.add_partition(partition)
 
-    def try_random_order(self, max_tries=10000):
+    def try_random_order(self, max_tries=5000):
         for i in range(max_tries):
             n_sequence = range(self.N)
             rand_instance.shuffle(n_sequence)
@@ -181,7 +193,8 @@ class PartitionMaker(PartitionSet):
                 return True
             except ValueError, e:
                 if i % 100 == 0:
-                    print ".",
+                    sys.stdout.write(".")
+                    sys.stdout.flush()
         else:
             raise ValueError("Could not find solution to add to %d items" % len(self.partitions))
 
@@ -204,8 +217,17 @@ if __name__ == '__main__':
         raise ValueError("Students must be an exact multiple of the number of leaders")
     A = 6   # number of activities
     P = PartitionMaker(len(students), len(students)/len(leaders), students, leaders)
-    for a in range(A-len(P.partitions)+1):
-        P.try_random_order()
+    repeated_failures = 0
+    while len(P.partitions) < A:
+        try:
+            P.try_random_order()
+            repeated_failures = 0
+        except ValueError:
+            repeated_failures += 1
+            items_to_pop = 1 + (repeated_failures // 5)
+            print ("Going back %d..." % items_to_pop)
+            for i in range(items_to_pop):
+                P.pop_partition()
     print
     P.show_and_test()
     P.save_de_rangement()
