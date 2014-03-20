@@ -28,9 +28,6 @@ def ordinal(n):
 
 rand_instance  = random.Random(x=1)
 
-# TODO: Add gender requirements
-# TODO: add assessors
-
 class PartitionSet(object):
     def __init__(self, N, S):
         """Sets up a partition set for N students divided into groups of S"""
@@ -70,7 +67,7 @@ class PartitionSet(object):
                 yield p, l
 
     def show_partition(self, partition):
-        print("\n".join('%(First Name)s %(Surname)s: ' % self.leaders[i] + ", ".join('%(First Name)s %(Surname)s' % self.students[n] for n in pp) for i, pp in enumerate(partition)))
+        print("\n".join('%(First Name)s %(Surname)s: ' % self.leaders[i] + ", ".join('%(First Name)s %(Surname)s (%(Gender)s)' % self.students[n] for n in pp) for i, pp in enumerate(partition)))
 
     def save_de_rangement(self):
         for partition in self.partitions:
@@ -127,7 +124,8 @@ class PartitionMaker(PartitionSet):
             avoid_leader = self.worked_with_leaders.get(n, set())
             for i, group in enumerate(sorted(partition, key=len)):
                 group = partition[i]
-                if len(group) < self.S and not group.intersection(avoid) and not i in avoid_leader:
+                genders = set([self.students[gn]['Gender'] for gn in group])
+                if (len(group) < (self.S-1) or (len(group) < self.S and (len(genders)>1 or self.students[n]['Gender'] not in genders))) and not group.intersection(avoid) and not i in avoid_leader:
                     group.add(n)
                     break
             else:
@@ -157,7 +155,7 @@ def simple_spread(N, S):
 if __name__ == '__main__':
 
     with open('scholar camp list.csv') as f:
-        students = list(csv.DictReader(f))
+        students = list(sorted(csv.DictReader(f), key=lambda s:(s['Gender'],s['Race'])))
 
     with open('leaders.csv') as f:
         leaders = list(csv.DictReader(f))
